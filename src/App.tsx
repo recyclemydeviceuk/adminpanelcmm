@@ -11,6 +11,7 @@ import AdminPricing from './pages/AdminPricing';
 import AdminUtilities from './pages/AdminUtilities';
 import AdminApiGateway from './pages/AdminApiGateway';
 import AdminPartners from './pages/AdminPartners';
+import AdminFeed from './pages/AdminFeed';
 
 const BASE = '/admin-cashmymobile';
 
@@ -97,6 +98,14 @@ export default function App() {
             element={
               <AdminGuard>
                 <AdminPartners />
+              </AdminGuard>
+            }
+          />
+          <Route
+            path={`${BASE}/feed`}
+            element={
+              <AdminGuard>
+                <AdminFeed />
               </AdminGuard>
             }
           />

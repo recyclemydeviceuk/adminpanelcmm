@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Smartphone, BarChart2,
   Globe, Settings, LogOut, Menu, X, ChevronRight,
-  ExternalLink, Building2,
+  ExternalLink, Building2, Rss,
 } from 'lucide-react';
 import { adminAuthApi } from './api/adminAuth';
 
@@ -13,7 +13,8 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, to: BASE },
   { label: 'Orders', icon: Package, to: `${BASE}/orders` },
   { label: 'Devices', icon: Smartphone, to: `${BASE}/devices` },
-  { label: 'Pricing Feed', icon: BarChart2, to: `${BASE}/pricing` },
+  { label: 'Pricing', icon: BarChart2, to: `${BASE}/pricing` },
+  { label: 'Feed', icon: Rss, to: `${BASE}/feed` },
   { label: 'Utilities', icon: Settings, to: `${BASE}/utilities` },
   { label: 'API Gateway', icon: Globe, to: `${BASE}/api-gateway` },
   { label: 'Partners', icon: Building2, to: `${BASE}/partners` },
