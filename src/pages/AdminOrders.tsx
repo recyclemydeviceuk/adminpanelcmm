@@ -8,12 +8,12 @@ import {
 import AdminLayout from '../AdminLayout';
 import { useAdmin } from '../AdminContext';
 import type { Order, UtilityItem } from '../types';
+import StatusSelector, { cleanStatusValue, statusLabel, statusColor } from '../components/StatusSelector';
 
 function StatusBadge({ value, statuses, fallbackColor }: { value: string; statuses: UtilityItem[]; fallbackColor: string }) {
-  const match = statuses.find(s => (s.value || s.name) === value);
   return (
-    <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${match?.color || fallbackColor}`}>
-      {match?.name || value}
+    <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(value, statuses, fallbackColor)}`}>
+      {statusLabel(value, statuses)}
     </span>
   );
 }
@@ -29,7 +29,6 @@ export default function AdminOrders() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
-  const [statusUpdateOrder, setStatusUpdateOrder] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -39,7 +38,9 @@ export default function AdminOrders() {
 
   const filtered = useMemo(() => {
     return orders.filter(o => {
-      if (statusFilter && o.status !== statusFilter) return false;
+      // Compare against the cleaned status so an `OrderStatus.RECEIVED`
+      // leak still filters correctly under "Received".
+      if (statusFilter && cleanStatusValue(o.status) !== cleanStatusValue(statusFilter)) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
@@ -220,7 +221,7 @@ export default function AdminOrders() {
         <QuickFilter active={!statusFilter} label="All" count={orders.length} onClick={() => setStatusFilter('')} />
         {orderStatuses.map(s => {
           const val = s.value || s.name;
-          const cnt = orders.filter(o => o.status === val).length;
+          const cnt = orders.filter(o => cleanStatusValue(o.status) === cleanStatusValue(val)).length;
           if (!cnt) return null;
           return <QuickFilter key={s.id} active={statusFilter === val} label={s.name} count={cnt} onClick={() => setStatusFilter(val)} color={s.color} />;
         })}
@@ -292,7 +293,13 @@ export default function AdminOrders() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge value={o.status} statuses={orderStatuses} fallbackColor="bg-gray-100 text-gray-700" />
+                      <StatusSelector
+                        value={o.status}
+                        statuses={orderStatuses}
+                        size="sm"
+                        fallbackColor="bg-gray-100 text-gray-700"
+                        onSelect={async (newStatus) => { await updateOrder(o.id, { status: newStatus as any }); }}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge value={o.paymentStatus} statuses={paymentStatuses} fallbackColor="bg-amber-100 text-amber-700" />
@@ -302,19 +309,13 @@ export default function AdminOrders() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <Link to={`/admin-cashmymobile/orders/${o.id}`} className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                        <Link to={`/admin-cashmymobile/orders/${o.id}`} className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="View details">
                           <Eye className="w-4 h-4" />
                         </Link>
                         <button
-                          onClick={() => setStatusUpdateOrder(o)}
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                          title="Update status"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
                           onClick={() => setConfirmDelete(o.id)}
                           className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all"
+                          title="Delete order"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -366,39 +367,6 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {statusUpdateOrder && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <div>
-                <h3 className="font-bold text-gray-900">Update Order Status</h3>
-                <p className="text-xs text-gray-500 mt-0.5">#{statusUpdateOrder.orderNumber} • {statusUpdateOrder.customerName}</p>
-              </div>
-              <button onClick={() => setStatusUpdateOrder(null)} className="p-1 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4">
-              <p className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">Select New Status</p>
-              <div className="grid grid-cols-2 gap-2">
-                {orderStatuses.filter(s => s.isActive).map(s => {
-                  const val = s.value || s.name;
-                  const isActive = statusUpdateOrder.status === val;
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => { updateOrder(statusUpdateOrder.id, { status: val as any }); setStatusUpdateOrder(null); }}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${s.color || 'bg-gray-100 text-gray-700'} ${isActive ? 'ring-2 ring-current' : 'opacity-60 hover:opacity-100'}`}
-                    >
-                      {s.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </AdminLayout>
   );
 }
