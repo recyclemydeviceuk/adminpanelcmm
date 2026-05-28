@@ -9,14 +9,35 @@ import type { PricingEntry, UtilityItem } from '../types';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 type PriceGrid = Record<string, Record<string, string>>;
+type GradeField = 'gradeNew' | 'gradeGood' | 'gradeBroken';
 
-const gradeFieldsByIndex: ('gradeNew' | 'gradeGood' | 'gradeBroken')[] = ['gradeNew', 'gradeGood', 'gradeBroken'];
+/**
+ * Map a DeviceCondition row to the Pricing column it writes to.
+ *
+ * CRITICAL — must be name-based, not index-based. The previous version of
+ * this file used `gradeFieldsByIndex[i]` which silently inverted the data
+ * whenever DeviceCondition rows weren't sorted [New, Good, Broken] — for
+ * example legacy installs had [Broken, Poor, Good], so Broken=£160 was
+ * written into the gradeNew column and the MSP feed exposed
+ * NEW=£160 / BROKEN=£695 (completely backwards).
+ */
+function conditionToGradeField(cond: { name?: string; value?: string }): GradeField | null {
+  const candidates = [cond.value || '', cond.name || ''].map(s => s.toLowerCase());
+  for (const s of candidates) {
+    if (!s) continue;
+    if (s.includes('new') || s.includes('excellent') || s.includes('mint') || s === 'a' || s === 'a+') return 'gradeNew';
+    if (s.includes('broken') || s.includes('faulty') || s.includes('damaged') || s.includes('poor')) return 'gradeBroken';
+    if (s.includes('good') || s.includes('working') || s.includes('used') || s.includes('fair')) return 'gradeGood';
+  }
+  return null;  // unknown condition — caller should skip
+}
 
 function getCondColor(name: string): string {
   const n = name.toLowerCase();
-  if (n.includes('new') || n.includes('mint')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-  if (n.includes('good')) return 'bg-blue-50 text-blue-700 border-blue-200';
-  return 'bg-red-50 text-red-700 border-red-200';
+  if (n.includes('new') || n.includes('mint') || n.includes('excellent')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (n.includes('broken') || n.includes('faulty') || n.includes('damaged') || n.includes('poor')) return 'bg-red-50 text-red-700 border-red-200';
+  if (n.includes('good') || n.includes('working') || n.includes('used') || n.includes('fair')) return 'bg-blue-50 text-blue-700 border-blue-200';
+  return 'bg-gray-50 text-gray-700 border-gray-200';
 }
 
 function DeviceCard({
@@ -44,10 +65,9 @@ function DeviceCard({
     const grid: PriceGrid = {};
     for (const s of activeStorages) {
       grid[s.name] = {};
-      for (let i = 0; i < activeConditions.length; i++) {
-        const c = activeConditions[i];
+      for (const c of activeConditions) {
         const entry = entries.find(e => e.network === network && e.storage === s.name);
-        const field = gradeFieldsByIndex[i];
+        const field = conditionToGradeField(c);
         grid[s.name][c.name] = entry && field ? String(entry[field] ?? '') : '';
       }
     }
@@ -60,10 +80,9 @@ function DeviceCard({
     const newGrid: PriceGrid = {};
     for (const s of activeStorages) {
       newGrid[s.name] = {};
-      for (let i = 0; i < activeConditions.length; i++) {
-        const c = activeConditions[i];
+      for (const c of activeConditions) {
         const entry = entries.find(e => e.network === previewNetwork && e.storage === s.name);
-        const field = gradeFieldsByIndex[i];
+        const field = conditionToGradeField(c);
         newGrid[s.name][c.name] = entry && field ? String(entry[field] ?? '') : '';
       }
     }
@@ -257,19 +276,17 @@ export default function AdminPricing() {
     if (!device) return;
     const activeStorages = storageOptions.filter(s => s.isActive);
     const activeConditions = conditions.filter(c => c.isActive);
-    const getField = (_condName: string, index: number): 'gradeNew' | 'gradeGood' | 'gradeBroken' => {
-      return gradeFieldsByIndex[index] ?? 'gradeNew';
-    };
     try {
       for (const network of selectedNetworksList) {
         for (const stor of activeStorages) {
           const existingEntry = pricingEntries.find(e => e.deviceId === deviceId && e.network === network && e.storage === stor.name);
           const updates: Partial<PricingEntry> = {};
-          activeConditions.forEach((cond, idx) => {
-            const field = getField(cond.name, idx);
+          for (const cond of activeConditions) {
+            const field = conditionToGradeField(cond);
+            if (!field) continue;  // unknown condition name — skip silently
             const raw = grid[stor.name]?.[cond.name] ?? '';
             (updates as any)[field] = raw === '' ? 0 : parseFloat(raw) || 0;
-          });
+          }
           if (existingEntry) {
             await updatePricingEntry(existingEntry.id, updates);
           } else {
@@ -290,11 +307,12 @@ export default function AdminPricing() {
       for (const network of selectedNetworksList) {
         for (const stor of activeStorages) {
           const u = { gradeNew: 0, gradeGood: 0, gradeBroken: 0 };
-          activeConditions.forEach((cond, idx) => {
-            const field = getField(cond.name, idx);
+          for (const cond of activeConditions) {
+            const field = conditionToGradeField(cond);
+            if (!field) continue;
             const raw = grid[stor.name]?.[cond.name] ?? '';
             (u as any)[field] = raw === '' ? 0 : parseFloat(raw) || 0;
-          });
+          }
           if (u.gradeNew > 0 || u.gradeGood > 0 || u.gradeBroken > 0) defaultPricing.push({ network, storage: stor.name, ...u });
         }
       }
