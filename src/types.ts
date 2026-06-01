@@ -134,6 +134,9 @@ export interface Order {
     hasCounterOffer?: boolean;
     latestOfferId?: string;
     status?: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+    revisedPrice?: number | null;
+    respondedAt?: string | null;
+    reason?: string | null;
   };
 }
 

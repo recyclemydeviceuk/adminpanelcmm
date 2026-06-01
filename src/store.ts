@@ -300,6 +300,16 @@ export function useAdminStore() {
           transactionId: o.transactionId,
           priceRevisionReason: o.priceRevisionReason,
           partnerName: o.partnerName || null,
+          counterOffer: o.counterOffer
+            ? {
+                hasCounterOffer: !!o.counterOffer.hasCounterOffer,
+                latestOfferId: o.counterOffer.latestOfferId,
+                status: o.counterOffer.status,
+                revisedPrice: o.counterOffer.revisedPrice ?? null,
+                respondedAt: o.counterOffer.respondedAt ?? null,
+                reason: o.counterOffer.reason ?? null,
+              }
+            : undefined,
         }));
         
         console.log('🎯 Mapped orders:', mapped);
@@ -539,14 +549,19 @@ export function useAdminStore() {
   }, [fetchOrders]);
 
   const deleteOrder = useCallback(async (id: string) => {
+    // Optimistically remove from the list so the row disappears even if the
+    // refetch races. If the backend call rejects, we re-fetch to restore
+    // the row and surface the error to the caller.
+    const previous = orders;
+    setOrders(prev => prev.filter(o => o.id !== id));
     try {
       await orderApi.deleteOrder(id);
-      setOrders(prev => prev.filter(o => o.id !== id));
     } catch (error) {
       console.error('Failed to delete order:', error);
+      setOrders(previous);
       throw error;
     }
-  }, []);
+  }, [orders]);
 
   const updateOrderStatus = useCallback(async (id: string, status: string) => {
     await updateOrder(id, { status: status as any });
@@ -587,6 +602,16 @@ export function useAdminStore() {
           transactionId: o.transactionId,
           priceRevisionReason: o.priceRevisionReason || o.price_revision_reason,
           partnerName: o.partnerName || o.partner_name || null,
+          counterOffer: o.counterOffer
+            ? {
+                hasCounterOffer: !!o.counterOffer.hasCounterOffer,
+                latestOfferId: o.counterOffer.latestOfferId,
+                status: o.counterOffer.status,
+                revisedPrice: o.counterOffer.revisedPrice ?? null,
+                respondedAt: o.counterOffer.respondedAt ?? null,
+                reason: o.counterOffer.reason ?? null,
+              }
+            : undefined,
         };
         return mapped;
       }

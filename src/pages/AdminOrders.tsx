@@ -26,6 +26,8 @@ export default function AdminOrders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || '');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
@@ -68,9 +70,25 @@ export default function AdminOrders() {
     }
   }, [currentPage, totalPages]);
 
-  const handleDelete = (id: string) => {
-    deleteOrder(id);
-    setConfirmDelete(null);
+  const handleDelete = async (id: string) => {
+    setDeleteError(null);
+    setDeletingId(id);
+    try {
+      await deleteOrder(id);
+      setConfirmDelete(null);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      const message =
+        (typeof detail === 'string' && detail) ||
+        detail?.message ||
+        detail?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to delete the order. Please refresh and try again.';
+      setDeleteError(message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const exportCSV = () => {
@@ -280,7 +298,9 @@ export default function AdminOrders() {
                       <p className="text-xs text-gray-600">{o.storage} · {o.network}</p>
                     </td>
                     <td className="px-4 py-3"><GradeBadge grade={o.deviceGrade} /></td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">£{o.offeredPrice}</td>
+                    <td className="px-4 py-3">
+                      <OfferedPriceCell order={o} />
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${o.source === 'API' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                         {o.source}
@@ -313,7 +333,7 @@ export default function AdminOrders() {
                           <Eye className="w-4 h-4" />
                         </Link>
                         <button
-                          onClick={() => setConfirmDelete(o.id)}
+                          onClick={() => { setDeleteError(null); setConfirmDelete(o.id); }}
                           className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all"
                           title="Delete order"
                         >
@@ -359,9 +379,27 @@ export default function AdminOrders() {
             </div>
             <h3 className="font-bold text-gray-900 text-center mb-1">Delete Order?</h3>
             <p className="text-sm text-gray-600 text-center mb-5">This action cannot be undone.</p>
+            {deleteError && (
+              <div className="mb-4 p-3 rounded-xl border border-red-200 bg-red-50 text-xs text-red-700">
+                {deleteError}
+              </div>
+            )}
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-2.5 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700">Delete</button>
+              <button
+                onClick={() => { setConfirmDelete(null); setDeleteError(null); }}
+                disabled={deletingId === confirmDelete}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                disabled={deletingId === confirmDelete}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deletingId === confirmDelete ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -400,4 +438,42 @@ function QuickFilter({ active, label, count, onClick, color }: { active: boolean
 function GradeBadge({ grade }: { grade: string }) {
   const map: Record<string, string> = { NEW: 'bg-emerald-100 text-emerald-700', GOOD: 'bg-blue-100 text-blue-700', BROKEN: 'bg-red-100 text-red-700' };
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${map[grade] || 'bg-gray-100 text-gray-600'}`}>{grade}</span>;
+}
+
+/** Show the offered price plus, when a counter offer exists, the revised
+ * amount + customer response. This is what made the admins blind to
+ * revisions on the main page before. */
+function OfferedPriceCell({ order }: { order: Order }) {
+  const co = order.counterOffer;
+  const revised =
+    (co?.revisedPrice ?? null) !== null ? co?.revisedPrice : order.finalPrice;
+  const hasRevision =
+    revised !== undefined && revised !== null && Number(revised) !== Number(order.offeredPrice);
+
+  if (!hasRevision) {
+    return <span className="font-semibold text-gray-900">£{order.offeredPrice}</span>;
+  }
+
+  const statusMap: Record<string, { label: string; cls: string }> = {
+    PENDING:  { label: 'Awaiting customer', cls: 'bg-amber-100 text-amber-700' },
+    ACCEPTED: { label: 'Accepted',          cls: 'bg-emerald-100 text-emerald-700' },
+    DECLINED: { label: 'Declined',          cls: 'bg-red-100 text-red-700' },
+  };
+  const tag = co?.status ? statusMap[co.status] : undefined;
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-semibold text-orange-600">£{revised}</span>
+        <span className="text-[10px] text-gray-500 line-through">£{order.offeredPrice}</span>
+      </div>
+      {tag ? (
+        <span className={`inline-block self-start text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${tag.cls}`}>
+          {tag.label}
+        </span>
+      ) : (
+        <span className="text-[10px] text-gray-500 font-medium">Revised</span>
+      )}
+    </div>
+  );
 }

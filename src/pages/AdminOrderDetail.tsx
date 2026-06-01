@@ -230,13 +230,29 @@ export default function AdminOrderDetail() {
                 <p className="text-2xl font-bold text-gray-900">£{order.offeredPrice}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-600 mb-1">Final Price</p>
-                <p className={`text-2xl font-bold ${order.finalPrice && order.finalPrice < order.offeredPrice ? 'text-orange-600' : 'text-emerald-600'}`}>
-                  £{order.finalPrice || order.offeredPrice}
-                  {order.finalPrice && order.finalPrice < order.offeredPrice && (
-                    <span className="text-sm font-normal text-orange-600 ml-1">revised</span>
-                  )}
+                <p className="text-xs text-gray-600 mb-1">
+                  {order.counterOffer?.hasCounterOffer ? 'Revised / Final Price' : 'Final Price'}
                 </p>
+                <p className={`text-2xl font-bold ${
+                  (order.counterOffer?.revisedPrice ?? order.finalPrice) &&
+                  Number(order.counterOffer?.revisedPrice ?? order.finalPrice) < order.offeredPrice
+                    ? 'text-orange-600' : 'text-emerald-600'
+                }`}>
+                  £{order.counterOffer?.revisedPrice ?? order.finalPrice ?? order.offeredPrice}
+                </p>
+                {order.counterOffer?.status && (
+                  <p className="text-xs font-semibold mt-1">
+                    <span className={`px-2 py-0.5 rounded-full ${
+                      order.counterOffer.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-700' :
+                      order.counterOffer.status === 'DECLINED' ? 'bg-red-100 text-red-700' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {order.counterOffer.status === 'PENDING'
+                        ? 'Counter offer — awaiting customer'
+                        : `Customer ${order.counterOffer.status.toLowerCase()}`}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </InfoCard>
