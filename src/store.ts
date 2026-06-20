@@ -286,6 +286,8 @@ export function useAdminStore() {
           customerPhone: o.customerPhone,
           customerEmail: o.customerEmail || '',
           customerAddress: o.customerAddress,
+          city: o.city ?? null,
+          postcode: o.postcode ?? null,
           deviceId: o.deviceId || '',
           deviceName: o.deviceName,
           network: o.network,
@@ -296,7 +298,17 @@ export function useAdminStore() {
           postageMethod: o.postageMethod,
           paymentMethod: o.paymentMethod || 'bank',
           paymentStatus: o.paymentStatus || 'PENDING',
-          payoutDetails: o.payoutDetails || { bankName: '', accountNumber: '', sortCode: '' },
+          // Map the payout the same way the detail view does so the account
+          // name (stored as `accountName`) shows in the list-sourced detail
+          // page too — previously bankName was undefined here and the admin
+          // saw a blank account-name row for direct website orders.
+          payoutDetails: o.payoutDetails
+            ? {
+                bankName: o.payoutDetails.accountName || o.payoutDetails.account_name || '',
+                accountNumber: o.payoutDetails.accountNumber || o.payoutDetails.account_number || '',
+                sortCode: o.payoutDetails.sortCode || o.payoutDetails.sort_code || '',
+              }
+            : { bankName: '', accountNumber: '', sortCode: '' },
           transactionId: o.transactionId,
           priceRevisionReason: o.priceRevisionReason,
           partnerName: o.partnerName || null,
@@ -563,9 +575,18 @@ export function useAdminStore() {
     }
   }, [orders]);
 
-  const updateOrderStatus = useCallback(async (id: string, status: string) => {
-    await updateOrder(id, { status: status as any });
-  }, [updateOrder]);
+  const updateOrderStatus = useCallback(async (id: string, status: string, comment?: string) => {
+    // Send the status (and optional customer-facing note) straight to the
+    // status endpoint so the comment reaches the email; then refetch so the
+    // list/detail reflect the new status.
+    try {
+      await orderApi.updateOrderStatus(id, status, comment);
+      await fetchOrders();
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      throw error;
+    }
+  }, [fetchOrders]);
 
   // ── Fetch Single Order ──────────────────────────────────────────────────
   const fetchOrderById = useCallback(async (id: string): Promise<Order | null> => {
@@ -584,6 +605,8 @@ export function useAdminStore() {
           customerPhone: o.customerPhone,
           customerEmail: o.customerEmail || '',
           customerAddress: o.customerAddress,
+          city: o.city ?? null,
+          postcode: o.postcode ?? null,
           deviceId: o.deviceId || o.device_id || '',
           deviceName: o.deviceName,
           network: o.network,

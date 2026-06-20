@@ -31,6 +31,9 @@ export default function AdminOrderDetail() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCounterOfferModal, setShowCounterOfferModal] = useState(false);
+  // Optional note staff can type before changing status — it's included in the
+  // email the customer receives for that status change, then cleared.
+  const [customerComment, setCustomerComment] = useState('');
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -83,9 +86,12 @@ export default function AdminOrderDetail() {
     : 0;
 
   const handleStatusChange = async (statusValue: string) => {
-    await updateOrderStatus(order.id, statusValue);
+    const note = customerComment.trim();
+    await updateOrderStatus(order.id, statusValue, note || undefined);
     // Local optimistic update so the timeline / badge re-render immediately
     setOrder({ ...order, status: statusValue as any });
+    // Clear the note so it isn't accidentally reused on the next status change.
+    setCustomerComment('');
   };
 
   return (
@@ -134,6 +140,24 @@ export default function AdminOrderDetail() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Optional note to the customer — included in the status-change email */}
+        <div className="mt-5 pt-5 border-t border-gray-100">
+          <label htmlFor="customer-note" className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            Note to customer <span className="text-gray-400 normal-case font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="customer-note"
+            value={customerComment}
+            onChange={e => setCustomerComment(e.target.value)}
+            rows={2}
+            placeholder="e.g. Your postage pack is on its way — please post within 7 days. Added to the email the customer gets when you change the status below."
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 resize-none"
+          />
+          <p className="text-xs text-gray-500 mt-1.5">
+            Type a message, then pick the new status — your note is added to that email. Leave blank to send the standard update.
+          </p>
         </div>
 
         {/* Compact progress stepper — no horizontal scroll, wraps cleanly */}
@@ -211,6 +235,8 @@ export default function AdminOrderDetail() {
             <Row label="Phone" value={order.customerPhone} />
             <Row label="Email" value={order.customerEmail || '—'} />
             <Row label="Address" value={order.customerAddress} />
+            <Row label="City / Town" value={order.city || '—'} />
+            <Row label="Postcode" value={order.postcode || '—'} />
           </InfoCard>
 
           <InfoCard icon={<Smartphone className="w-4 h-4 text-orange-600" />} title="Device Details">
@@ -288,7 +314,7 @@ export default function AdminOrderDetail() {
             <Row label="Method" value={
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Bank Transfer</span>
             } />
-            <Row label="Bank" value={order.payoutDetails?.bankName || '—'} />
+            <Row label="Account Name" value={order.payoutDetails?.bankName || '—'} />
             <Row label="Account" value={order.payoutDetails?.accountNumber || '—'} />
             <Row label="Sort Code" value={order.payoutDetails?.sortCode || '—'} />
             {order.transactionId && <Row label="Transaction ID" value={order.transactionId} mono />}

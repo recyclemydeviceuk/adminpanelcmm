@@ -94,8 +94,10 @@ export const orderApi = {
     return api.put<{ order: Order; message: string }>(`/orders/${id}`, data);
   },
 
-  async updateOrderStatus(id: string, status: string) {
-    return api.patch<{ order: Order; message: string }>(`/orders/${id}/status`, { status });
+  async updateOrderStatus(id: string, status: string, comment?: string) {
+    // `comment` is an optional staff note that gets included in the customer's
+    // status-update email. Omitted/empty → the standard email goes out.
+    return api.patch<{ order: Order; message: string }>(`/orders/${id}/status`, { status, comment });
   },
 
   async deleteOrder(id: string) {

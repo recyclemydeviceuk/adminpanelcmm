@@ -106,6 +106,8 @@ export interface Order {
   customerPhone: string;
   customerEmail: string;
   customerAddress: string;
+  city?: string | null;
+  postcode?: string | null;
 
   // Device
   deviceId: string;
