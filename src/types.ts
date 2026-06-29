@@ -13,6 +13,8 @@ export type OrderStatus =
   | 'PAID'
   | 'COMPLETED'
   | 'CLOSED'
+  | 'RETURNED'
+  // legacy — retired in favour of RETURNED, kept so old rows still type-check
   | 'CANCELLED';
 
 export const ORDER_STATUSES: OrderStatus[] = [
@@ -25,7 +27,7 @@ export const ORDER_STATUSES: OrderStatus[] = [
   'PAYOUT_READY',
   'PAID',
   'CLOSED',
-  'CANCELLED',
+  'RETURNED',
 ];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -42,7 +44,8 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PAID: 'Paid',
   COMPLETED: 'Completed',
   CLOSED: 'Closed',
-  CANCELLED: 'Cancelled',
+  RETURNED: 'Returned',
+  CANCELLED: 'Returned',
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
@@ -59,6 +62,7 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   PAID: 'bg-emerald-100 text-emerald-700',
   COMPLETED: 'bg-emerald-100 text-emerald-700',
   CLOSED: 'bg-gray-100 text-gray-600',
+  RETURNED: 'bg-red-100 text-red-700',
   CANCELLED: 'bg-red-100 text-red-700',
 };
 

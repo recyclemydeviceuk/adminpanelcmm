@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   const stats = useMemo(() => {
     if (!dashboardStats) {
       const total = orders.length;
-      const active = orders.filter(o => !['COMPLETED', 'PAID', 'CLOSED', 'CANCELLED'].includes(o.status)).length;
+      const active = orders.filter(o => !['COMPLETED', 'PAID', 'CLOSED', 'CANCELLED', 'RETURNED'].includes(o.status)).length;
       const paidCompleted = orders.filter(o => ['COMPLETED', 'PAID'].includes(o.status)).length;
       const totalValue = orders.filter(o => ['COMPLETED', 'PAID'].includes(o.status)).reduce((s, o) => s + (o.finalPrice || o.offeredPrice), 0);
       const apiOrders = orders.filter(o => o.source === 'API').length;

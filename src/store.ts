@@ -143,7 +143,7 @@ export const mockOrders: Order[] = [
     transactionId: 'TXN-006',
   },
   {
-    id: 'o7', orderNumber: 'CMM1007', source: 'API', status: 'CANCELLED',
+    id: 'o7', orderNumber: 'CMM1007', source: 'API', status: 'RETURNED',
     createdAt: '2025-02-12T10:00:00Z', updatedAt: '2025-02-13T08:00:00Z',
     customerName: 'David Smith', customerPhone: '03333356679', customerEmail: 'david@example.com',
     customerAddress: '31 Oak Road, Cardiff, CF1 1AD',
