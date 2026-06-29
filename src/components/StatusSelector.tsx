@@ -40,12 +40,17 @@ export function cleanStatusValue(raw: string | undefined | null): string {
     complete: 'PAID',
     counter_offered: 'PRICE_REVISED',
     'counter offered': 'PRICE_REVISED',
+    // "Cancelled" retired in favour of "Returned" — fold legacy rows in.
+    cancelled: 'RETURNED',
+    canceled: 'RETURNED',
   };
   const upper = s.toUpperCase();
+  // CANCELLED deliberately excluded so a stored CANCELLED falls through to the
+  // legacy map above and resolves to RETURNED.
   const known = new Set([
     'RECEIVED', 'PACK_SENT', 'DEVICE_RECEIVED', 'INSPECTION_PASSED',
     'INSPECTION_FAILED', 'PRICE_REVISED', 'PAYOUT_READY', 'PAID',
-    'CLOSED', 'CANCELLED', 'PENDING',
+    'CLOSED', 'RETURNED', 'PENDING',
   ]);
   if (known.has(upper)) return upper;
   return legacy[s.toLowerCase()] || s;

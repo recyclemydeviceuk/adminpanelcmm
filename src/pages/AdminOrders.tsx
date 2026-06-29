@@ -92,15 +92,17 @@ export default function AdminOrders() {
   };
 
   const exportCSV = () => {
-    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Device', 'Network', 'Grade', 'Storage', 'Offered £', 'Final £', 'Status', 'Source', 'Payment', 'Postage', 'Date'];
+    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Address', 'City', 'Postcode', 'Device', 'Network', 'Grade', 'Storage', 'Offered £', 'Final £', 'Status', 'Source', 'Payment', 'Postage', 'Date'];
     const rows = filtered.map(o => [
       o.orderNumber, o.customerName, o.customerEmail, o.customerPhone,
+      o.customerAddress || '', o.city || '', o.postcode || '',
       o.deviceName, o.network, o.deviceGrade, o.storage,
       o.offeredPrice, o.finalPrice || '', o.status, o.source,
       o.paymentMethod, o.postageMethod,
       new Date(o.createdAt).toLocaleDateString('en-GB'),
     ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    // Escape embedded quotes so multi-line UK addresses with " don't break columns.
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
