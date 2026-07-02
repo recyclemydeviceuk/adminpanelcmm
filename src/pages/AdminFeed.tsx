@@ -48,12 +48,23 @@ export default function AdminFeed() {
     fetchStats();
   }, [page]);
 
+  const redirectIfUnauthorized = (res: Response) => {
+    if (res.status === 401) {
+      localStorage.removeItem('adminAuthToken');
+      localStorage.removeItem('adminUser');
+      window.location.replace('/admin-cashmymobile/login');
+      return true;
+    }
+    return false;
+  };
+
   const fetchLogs = async () => {
     try {
       const token = localStorage.getItem('adminAuthToken');
       const res = await fetch(`${API}/api/feed-logs?page=${page}&limit=50`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (redirectIfUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         setLogs(data.data.logs);
@@ -72,6 +83,7 @@ export default function AdminFeed() {
       const res = await fetch(`${API}/api/feed-logs/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (redirectIfUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         setStats(data.data);

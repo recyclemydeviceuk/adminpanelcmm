@@ -44,7 +44,23 @@ class ApiClient {
 
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse<ApiResponse>) => response,
-      (error: AxiosError<ApiResponse>) => Promise.reject(error)
+      (error: AxiosError<ApiResponse>) => {
+        if (error.response?.status === 401) {
+          const url = error.config?.url || '';
+          // 401 from the login endpoints means a wrong OTP or unauthorized
+          // email — let the login form show that error instead of redirecting.
+          const isLoginEndpoint = url.includes('/auth/request-otp') || url.includes('/auth/verify-otp');
+          if (!isLoginEndpoint) {
+            localStorage.removeItem('adminAuthToken');
+            localStorage.removeItem('adminUser');
+            const loginPath = '/admin-cashmymobile/login';
+            if (!window.location.pathname.startsWith(loginPath)) {
+              window.location.replace(loginPath);
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
     );
   }
 
@@ -71,6 +87,12 @@ class ApiClient {
   async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.delete<ApiResponse<T>>(url, config);
     return response.data;
+  }
+
+  /** GET a file (CSV/ZIP) with the auth header attached; returns a Blob. */
+  async download(url: string, config?: AxiosRequestConfig): Promise<Blob> {
+    const response = await this.axiosInstance.get(url, { ...config, responseType: 'blob' });
+    return response.data as Blob;
   }
 }
 

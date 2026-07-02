@@ -61,29 +61,49 @@ export interface OrdersResponse {
   };
 }
 
+export interface OrderFilterParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  source?: string;
+  paymentStatus?: string;
+  grade?: string;
+  network?: string;
+  postageMethod?: string;
+  partner?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+function toQueryString(params?: Record<string, any>): string {
+  const queryParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, String(value));
+      }
+    });
+  }
+  return queryParams.toString();
+}
+
 export const orderApi = {
   async createOrder(payload: CreateOrderPayload) {
     return api.post<{ order: Order; message: string }>('/orders', payload);
   },
 
-  async getAllOrders(params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    source?: string;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, String(value));
-        }
-      });
-    }
-    return api.get<OrdersResponse>(`/orders?${queryParams.toString()}`);
+  async getAllOrders(params?: OrderFilterParams) {
+    return api.get<OrdersResponse>(`/orders?${toQueryString(params)}`);
+  },
+
+  /** Server-side CSV export using the same filters as the orders list. */
+  async exportOrders(params?: Omit<OrderFilterParams, 'page' | 'limit' | 'sortBy' | 'sortOrder'>) {
+    return api.download(`/export/orders?${toQueryString(params)}`);
   },
 
   async getOrderById(id: string) {

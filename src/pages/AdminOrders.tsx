@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '../AdminLayout';
 import { useAdmin } from '../AdminContext';
+import { orderApi } from '../api/orders';
 import type { Order, UtilityItem } from '../types';
 import StatusSelector, { cleanStatusValue, statusLabel, statusColor } from '../components/StatusSelector';
 
@@ -19,12 +20,21 @@ function StatusBadge({ value, statuses, fallbackColor }: { value: string; status
 }
 
 export default function AdminOrders() {
-  const { orders, deleteOrder, updateOrder, fetchOrders, loadingOrders, orderStatuses, paymentStatuses } = useAdmin();
+  const { orders, deleteOrder, updateOrder, fetchOrders, loadingOrders, orderStatuses, paymentStatuses, networks } = useAdmin();
   const [searchParams] = useSearchParams();
   const pageSize = 10;
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || '');
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
+  const [networkFilter, setNetworkFilter] = useState('');
+  const [postageFilter, setPostageFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -33,10 +43,24 @@ export default function AdminOrders() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Everything except status + search is filtered server-side: any change
+  // here refetches from the backend. Status and search stay client-side so
+  // the per-status quick-filter counts remain correct for the current set.
+  const serverFilters = useMemo(() => ({
+    source: sourceFilter || undefined,
+    paymentStatus: paymentFilter || undefined,
+    grade: gradeFilter || undefined,
+    network: networkFilter || undefined,
+    postageMethod: postageFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  }), [sourceFilter, paymentFilter, gradeFilter, networkFilter, postageFilter, dateFrom, dateTo]);
+
   useEffect(() => {
     setCurrentPage(1);
-    fetchOrders({ page: 1 });
-  }, []);
+    fetchOrders({ page: 1, ...serverFilters });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverFilters]);
 
   const filtered = useMemo(() => {
     return orders.filter(o => {
@@ -91,27 +115,41 @@ export default function AdminOrders() {
     }
   };
 
-  const exportCSV = () => {
-    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Address', 'City', 'Postcode', 'Device', 'Network', 'Grade', 'Storage', 'Offered £', 'Final £', 'Status', 'Source', 'Payment', 'Postage', 'Date'];
-    const rows = filtered.map(o => [
-      o.orderNumber, o.customerName, o.customerEmail, o.customerPhone,
-      o.customerAddress || '', o.city || '', o.postcode || '',
-      o.deviceName, o.network, o.deviceGrade, o.storage,
-      o.offeredPrice, o.finalPrice || '', o.status, o.source,
-      o.paymentMethod, o.postageMethod,
-      new Date(o.createdAt).toLocaleDateString('en-GB'),
-    ]);
-    // Escape embedded quotes so multi-line UK addresses with " don't break columns.
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'orders.csv'; a.click();
-    URL.revokeObjectURL(url);
+  // Server-side export: the backend applies the same filters as the list and
+  // returns a CSV with every field (contact, address, bank details, counter
+  // offer, tracking) — not just the visible columns.
+  const exportCSV = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const blob = await orderApi.exportOrders({
+        status: statusFilter || undefined,
+        search: search || undefined,
+        ...serverFilters,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+      setExportError('Export failed. Please check your connection and try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const clearFilters = () => { setStatusFilter(''); setSearch(''); };
-  const hasFilters = statusFilter || search;
+  const clearFilters = () => {
+    setStatusFilter(''); setSearch(''); setSourceFilter(''); setPaymentFilter('');
+    setGradeFilter(''); setNetworkFilter(''); setPostageFilter('');
+    setDateFrom(''); setDateTo('');
+  };
+  const hasFilters = Boolean(
+    statusFilter || search || sourceFilter || paymentFilter || gradeFilter ||
+    networkFilter || postageFilter || dateFrom || dateTo
+  );
 
   const toggleOrder = (id: string) => {
     const newSet = new Set(selectedOrders);
@@ -192,7 +230,7 @@ export default function AdminOrders() {
           <button
             onClick={() => {
               setCurrentPage(1);
-              fetchOrders({ page: 1 });
+              fetchOrders({ page: 1, ...serverFilters });
             }}
             disabled={loadingOrders}
             className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white hover:bg-gray-50 text-gray-700 transition-all disabled:opacity-50"
@@ -200,8 +238,13 @@ export default function AdminOrders() {
             {loadingOrders ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Refresh
           </button>
-          <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white hover:bg-gray-50 text-gray-700 transition-all">
-            <Download className="w-4 h-4" /> Export CSV
+          <button
+            onClick={exportCSV}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white hover:bg-gray-50 text-gray-700 transition-all disabled:opacity-50"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export CSV
           </button>
         </div>
       </div>
@@ -228,12 +271,45 @@ export default function AdminOrders() {
         </div>
       )}
 
+      {exportError && (
+        <div className="mb-4 p-3 rounded-xl border border-red-200 bg-red-50 text-sm text-red-700 flex items-center justify-between">
+          <span>{exportError}</span>
+          <button onClick={() => setExportError(null)} className="text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
       {showFilters && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 shadow-sm items-end">
           <SelectFilter label="Status" value={statusFilter} onChange={v => setStatusFilter(v)}>
             <option value="">All Statuses</option>
             {orderStatuses.map(s => <option key={s.id} value={s.value || s.name}>{s.name}</option>)}
           </SelectFilter>
+          <SelectFilter label="Payment" value={paymentFilter} onChange={v => setPaymentFilter(v)}>
+            <option value="">All Payments</option>
+            {paymentStatuses.map(s => <option key={s.id} value={s.value || s.name}>{s.name}</option>)}
+          </SelectFilter>
+          <SelectFilter label="Source" value={sourceFilter} onChange={v => setSourceFilter(v)}>
+            <option value="">All Sources</option>
+            <option value="WEBSITE">Website</option>
+            <option value="API">API (Partner)</option>
+          </SelectFilter>
+          <SelectFilter label="Grade" value={gradeFilter} onChange={v => setGradeFilter(v)}>
+            <option value="">All Grades</option>
+            <option value="NEW">New / Mint</option>
+            <option value="GOOD">Good</option>
+            <option value="BROKEN">Broken / Faulty</option>
+          </SelectFilter>
+          <SelectFilter label="Network" value={networkFilter} onChange={v => setNetworkFilter(v)}>
+            <option value="">All Networks</option>
+            {networks.map(n => <option key={n.id} value={n.name}>{n.name}</option>)}
+          </SelectFilter>
+          <SelectFilter label="Postage" value={postageFilter} onChange={v => setPostageFilter(v)}>
+            <option value="">All Postage</option>
+            <option value="label">Label (customer prints)</option>
+            <option value="postbag">Postbag</option>
+          </SelectFilter>
+          <DateFilter label="Date From" value={dateFrom} onChange={setDateFrom} />
+          <DateFilter label="Date To" value={dateTo} onChange={setDateTo} />
         </div>
       )}
 
@@ -408,6 +484,20 @@ export default function AdminOrders() {
       )}
 
     </AdminLayout>
+  );
+}
+
+function DateFilter({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</label>
+      <input
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:border-red-500"
+      />
+    </div>
   );
 }
 

@@ -275,7 +275,11 @@ export function useAdminStore() {
       console.log('📈 Orders count:', ordersArr.length);
       
       if (res.success && ordersArr.length >= 0) {
-        const mapped = ordersArr.map((o: any): Order => ({
+        const mapped = ordersArr.map((o: any): Order => {
+          // Backend may emit snake_case or camelCase keys — accept both.
+          const payout = o.payoutDetails || o.payout_details;
+          const counter = o.counterOffer || o.counter_offer;
+          return ({
           id: o._id || o.id,
           orderNumber: o.orderNumber,
           source: o.source,
@@ -302,27 +306,28 @@ export function useAdminStore() {
           // name (stored as `accountName`) shows in the list-sourced detail
           // page too — previously bankName was undefined here and the admin
           // saw a blank account-name row for direct website orders.
-          payoutDetails: o.payoutDetails
+          payoutDetails: payout
             ? {
-                bankName: o.payoutDetails.accountName || o.payoutDetails.account_name || '',
-                accountNumber: o.payoutDetails.accountNumber || o.payoutDetails.account_number || '',
-                sortCode: o.payoutDetails.sortCode || o.payoutDetails.sort_code || '',
+                bankName: payout.accountName || payout.account_name || '',
+                accountNumber: payout.accountNumber || payout.account_number || '',
+                sortCode: payout.sortCode || payout.sort_code || '',
               }
             : { bankName: '', accountNumber: '', sortCode: '' },
           transactionId: o.transactionId,
           priceRevisionReason: o.priceRevisionReason,
           partnerName: o.partnerName || null,
-          counterOffer: o.counterOffer
+          counterOffer: counter
             ? {
-                hasCounterOffer: !!o.counterOffer.hasCounterOffer,
-                latestOfferId: o.counterOffer.latestOfferId,
-                status: o.counterOffer.status,
-                revisedPrice: o.counterOffer.revisedPrice ?? null,
-                respondedAt: o.counterOffer.respondedAt ?? null,
-                reason: o.counterOffer.reason ?? null,
+                hasCounterOffer: !!(counter.hasCounterOffer ?? counter.has_counter_offer),
+                latestOfferId: counter.latestOfferId ?? counter.latest_offer_id,
+                status: counter.status,
+                revisedPrice: counter.revisedPrice ?? counter.revised_price ?? null,
+                respondedAt: counter.respondedAt ?? counter.responded_at ?? null,
+                reason: counter.reason ?? null,
               }
             : undefined,
-        }));
+          });
+        });
         
         console.log('🎯 Mapped orders:', mapped);
         
@@ -618,9 +623,9 @@ export function useAdminStore() {
           paymentMethod: (o.paymentMethod || 'bank') as PaymentMethod,
           paymentStatus: (o.paymentStatus || 'PENDING') as PaymentStatus,
           payoutDetails: {
-            bankName: (o.payoutDetails?.accountName || o.payoutDetails?.account_name || ''),
-            accountNumber: o.payoutDetails?.accountNumber || '',
-            sortCode: o.payoutDetails?.sortCode || '',
+            bankName: (o.payoutDetails?.accountName || o.payoutDetails?.account_name || o.payout_details?.accountName || o.payout_details?.account_name || ''),
+            accountNumber: o.payoutDetails?.accountNumber || o.payout_details?.accountNumber || '',
+            sortCode: o.payoutDetails?.sortCode || o.payout_details?.sortCode || '',
           },
           transactionId: o.transactionId,
           priceRevisionReason: o.priceRevisionReason || o.price_revision_reason,
