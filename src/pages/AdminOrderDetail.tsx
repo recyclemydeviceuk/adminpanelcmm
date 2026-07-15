@@ -137,7 +137,12 @@ export default function AdminOrderDetail() {
       });
       setEditingPrice(false);
     } catch (err: any) {
-      setPriceError(err?.response?.data?.message || 'Failed to update price');
+      // FastAPI errors arrive as {detail: {message}} — check both shapes.
+      setPriceError(
+        err?.response?.data?.message ||
+        err?.response?.data?.detail?.message ||
+        'Failed to update price'
+      );
     } finally {
       setSavingPrice(false);
     }
