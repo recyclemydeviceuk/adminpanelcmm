@@ -11,10 +11,11 @@ export default function AdminPartners() {
   const { partners, loadingPartners, fetchPartners, createPartner, regeneratePartnerKey, togglePartner, deletePartner } = useAdmin();
 
   const [newName, setNewName] = useState('');
+  const [newIsTest, setNewIsTest] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [newKey, setNewKey] = useState<{ id: string; key: string; name: string } | null>(null);
+  const [newKey, setNewKey] = useState<{ id: string; key: string; name: string; isTest?: boolean } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,7 +28,7 @@ export default function AdminPartners() {
     setCreating(true);
     setError('');
     try {
-      const res = await createPartner(newName.trim());
+      const res = await createPartner(newName.trim(), newIsTest);
       // python_backend returns api_key inside data.partner.api_key
       const rawData = res.data as any;
       const apiKey = rawData?.partner?.api_key || rawData?.api_key || rawData?.apiKey;
@@ -37,8 +38,10 @@ export default function AdminPartners() {
           id: partnerData?._id || partnerData?.id || '',
           key: apiKey,
           name: newName.trim(),
+          isTest: newIsTest,
         });
         setNewName('');
+        setNewIsTest(false);
         setShowCreateForm(false);
       }
     } catch (err: any) {
@@ -117,11 +120,28 @@ export default function AdminPartners() {
               {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Create
             </button>
-            <button onClick={() => { setShowCreateForm(false); setNewName(''); setError(''); }} className="px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all">
+            <button onClick={() => { setShowCreateForm(false); setNewName(''); setNewIsTest(false); setError(''); }} className="px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all">
               Cancel
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">An API key will be generated automatically. Store it securely — it won't be shown again.</p>
+          <label className="flex items-start gap-2.5 mt-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={newIsTest}
+              onChange={e => setNewIsTest(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+            />
+            <span className="text-sm text-gray-700">
+              <span className="font-semibold">UAT / test partner</span>
+              <span className="block text-xs text-gray-500 mt-0.5">
+                Orders sent with this key are marked as test data: they are hidden from the
+                orders list, dashboard and exports, never trigger a customer confirmation
+                email, and do not count towards partner order totals. Use this for a
+                partner's integration testing — never for live traffic.
+              </span>
+            </span>
+          </label>
+          <p className="text-xs text-gray-500 mt-3">An API key will be generated automatically. Store it securely — it won't be shown again.</p>
         </div>
       )}
 
@@ -130,6 +150,11 @@ export default function AdminPartners() {
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             <h3 className="font-semibold text-emerald-800">API Key for {newKey.name}</h3>
+            {newKey.isTest && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase tracking-wide">
+                UAT / Test
+              </span>
+            )}
           </div>
           <p className="text-xs text-emerald-700 mb-3">Save this key now — it won't be shown again after you close this notice.</p>
           <div className="flex items-center gap-2 bg-white border border-emerald-300 rounded-xl px-4 py-3">
@@ -174,7 +199,14 @@ export default function AdminPartners() {
                         <Building2 className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{partner.name}</p>
+                        <p className="font-semibold text-gray-900 flex items-center gap-1.5">
+                          {partner.name}
+                          {partner.isTest && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 uppercase tracking-wide">
+                              Test
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-gray-500">ID: {partner.id.slice(-8)}</p>
                       </div>
                     </div>

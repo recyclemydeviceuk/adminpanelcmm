@@ -5,6 +5,7 @@ export interface Partner {
   name: string;
   keyPrefix: string;
   isActive: boolean;
+  isTest: boolean;
   totalOrders: number;
   lastUsedAt: string | null;
   createdAt: string;
@@ -18,8 +19,8 @@ export interface CreatePartnerResponse {
 export const partnerApi = {
   getAll: () => api.get<{ partners: any[] }>('/partners'),
 
-  create: (name: string) =>
-    api.post<CreatePartnerResponse>('/partners', { name }),
+  create: (name: string, isTest = false) =>
+    api.post<CreatePartnerResponse>('/partners', { name, is_test: isTest }),
 
   regenerateKey: (id: string) =>
     api.post<CreatePartnerResponse>(`/partners/${id}/regenerate-key`, {}),

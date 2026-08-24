@@ -1161,6 +1161,7 @@ export function useAdminStore() {
           name: p.name,
           keyPrefix: p.keyPrefix,
           isActive: p.isActive,
+          isTest: !!p.isTest,
           totalOrders: p.totalOrders,
           lastUsedAt: p.lastUsedAt,
           createdAt: p.createdAt,
@@ -1173,8 +1174,8 @@ export function useAdminStore() {
     }
   }, []);
 
-  const createPartner = useCallback(async (name: string) => {
-    const res = await partnerApi.create(name);
+  const createPartner = useCallback(async (name: string, isTest = false) => {
+    const res = await partnerApi.create(name, isTest);
     if (res.success && res.data?.partner) {
       const p = res.data.partner;
       setPartners(prev => [{
@@ -1182,6 +1183,7 @@ export function useAdminStore() {
         name: p.name,
         keyPrefix: p.keyPrefix,
         isActive: p.isActive,
+        isTest: !!(p as any).isTest,
         totalOrders: p.totalOrders ?? 0,
         lastUsedAt: p.lastUsedAt ?? null,
         createdAt: p.createdAt,

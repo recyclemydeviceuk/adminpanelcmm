@@ -222,6 +222,8 @@ export interface Partner {
   name: string;
   keyPrefix: string;
   isActive: boolean;
+  /** UAT partner: its orders are flagged is_test and kept out of live reporting. */
+  isTest: boolean;
   totalOrders: number;
   lastUsedAt: string | null;
   createdAt: string;
