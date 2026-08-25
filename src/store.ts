@@ -78,7 +78,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o1', orderNumber: 'CMM1001', source: 'WEBSITE', status: 'RECEIVED',
     createdAt: '2025-02-20T10:30:00Z', updatedAt: '2025-02-20T10:30:00Z',
-    customerName: 'James Wilson', customerPhone: '03333356679', customerEmail: 'james@example.com',
+    customerName: 'James Wilson', customerPhone: '07700900123', customerEmail: 'james@example.com',
     customerAddress: '12 Baker Street, London, W1U 3BT',
     deviceId: 'd1', deviceName: 'Apple iPhone 16 Pro Max', network: 'Unlocked',
     deviceGrade: 'GOOD', storage: '256GB', offeredPrice: 655,
@@ -89,7 +89,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o2', orderNumber: 'CMM1002', source: 'API', status: 'PACK_SENT',
     createdAt: '2025-02-19T14:15:00Z', updatedAt: '2025-02-20T08:00:00Z',
-    customerName: 'Sarah Brown', customerPhone: '03333356679', customerEmail: 'sarah@example.com',
+    customerName: 'Sarah Brown', customerPhone: '07700900123', customerEmail: 'sarah@example.com',
     customerAddress: '45 High Street, Manchester, M1 1AD',
     deviceId: 'd4', deviceName: 'Apple iPhone 15 Pro Max', network: 'O2',
     deviceGrade: 'BROKEN', storage: '512GB', offeredPrice: 280,
@@ -100,7 +100,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o3', orderNumber: 'CMM1003', source: 'API', status: 'INSPECTION_PASSED',
     createdAt: '2025-02-18T09:00:00Z', updatedAt: '2025-02-21T11:00:00Z',
-    customerName: 'Mike Chen', customerPhone: '03333356679', customerEmail: 'mike@example.com',
+    customerName: 'Mike Chen', customerPhone: '07700900123', customerEmail: 'mike@example.com',
     customerAddress: '7 Oak Avenue, Birmingham, B1 1BB',
     deviceId: 'd9', deviceName: 'Samsung Galaxy S24 Ultra', network: 'Unlocked',
     deviceGrade: 'NEW', storage: '1TB', offeredPrice: 525, finalPrice: 525,
@@ -111,7 +111,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o4', orderNumber: 'CMM1004', source: 'WEBSITE', status: 'PAYOUT_READY',
     createdAt: '2025-02-17T16:45:00Z', updatedAt: '2025-02-22T09:30:00Z',
-    customerName: 'Emma Davis', customerPhone: '03333356679', customerEmail: 'emma@example.com',
+    customerName: 'Emma Davis', customerPhone: '07700900123', customerEmail: 'emma@example.com',
     customerAddress: '23 Rose Lane, Leeds, LS1 1AB',
     deviceId: 'd2', deviceName: 'Apple iPhone 16 Pro', network: 'Vodafone',
     deviceGrade: 'GOOD', storage: '128GB', offeredPrice: 555, finalPrice: 555,
@@ -122,7 +122,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o5', orderNumber: 'CMM1005', source: 'API', status: 'PRICE_REVISED',
     createdAt: '2025-02-16T11:20:00Z', updatedAt: '2025-02-21T15:00:00Z',
-    customerName: 'Tom Parker', customerPhone: '03333356679', customerEmail: 'tom@example.com',
+    customerName: 'Tom Parker', customerPhone: '07700900123', customerEmail: 'tom@example.com',
     customerAddress: '89 Pine Road, Bristol, BS1 1AA',
     deviceId: 'd3', deviceName: 'Apple iPhone 16', network: 'EE',
     deviceGrade: 'GOOD', storage: '128GB', offeredPrice: 425, finalPrice: 380,
@@ -134,7 +134,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o6', orderNumber: 'CMM1006', source: 'WEBSITE', status: 'PAID',
     createdAt: '2025-02-10T13:00:00Z', updatedAt: '2025-02-15T10:00:00Z',
-    customerName: 'Lucy Johnson', customerPhone: '03333356679', customerEmail: 'lucy@example.com',
+    customerName: 'Lucy Johnson', customerPhone: '07700900123', customerEmail: 'lucy@example.com',
     customerAddress: '56 Elm Street, Edinburgh, EH1 1AB',
     deviceId: 'd5', deviceName: 'Apple iPhone 15 Pro', network: 'Unlocked',
     deviceGrade: 'GOOD', storage: '256GB', offeredPrice: 440, finalPrice: 440,
@@ -145,7 +145,7 @@ export const mockOrders: Order[] = [
   {
     id: 'o7', orderNumber: 'CMM1007', source: 'API', status: 'RETURNED',
     createdAt: '2025-02-12T10:00:00Z', updatedAt: '2025-02-13T08:00:00Z',
-    customerName: 'David Smith', customerPhone: '03333356679', customerEmail: 'david@example.com',
+    customerName: 'David Smith', customerPhone: '07700900123', customerEmail: 'david@example.com',
     customerAddress: '31 Oak Road, Cardiff, CF1 1AD',
     deviceId: 'd11', deviceName: 'Samsung Galaxy S24', network: 'Three',
     deviceGrade: 'BROKEN', storage: '128GB', offeredPrice: 120,
