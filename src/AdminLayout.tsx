@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Smartphone, BarChart2,
   Globe, Settings, LogOut, Menu, X, ChevronRight,
-  ExternalLink, Building2, Rss,
+  ExternalLink, Building2, Rss, Shield,
 } from 'lucide-react';
 import { adminAuthApi } from './api/adminAuth';
 
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { label: 'Utilities', icon: Settings, to: `${BASE}/utilities` },
   { label: 'API Gateway', icon: Globe, to: `${BASE}/api-gateway` },
   { label: 'Partners', icon: Building2, to: `${BASE}/partners` },
+  { label: 'IP Whitelist', icon: Shield, to: `${BASE}/ip-whitelist` },
 ];
 
 interface Props {

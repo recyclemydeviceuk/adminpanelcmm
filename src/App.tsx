@@ -10,6 +10,7 @@ import AdminDeviceForm from './pages/AdminDeviceForm';
 import AdminPricing from './pages/AdminPricing';
 import AdminUtilities from './pages/AdminUtilities';
 import AdminApiGateway from './pages/AdminApiGateway';
+import AdminIpWhitelist from './pages/AdminIpWhitelist';
 import AdminPartners from './pages/AdminPartners';
 import AdminFeed from './pages/AdminFeed';
 
@@ -90,6 +91,14 @@ export default function App() {
             element={
               <AdminGuard>
                 <AdminApiGateway />
+              </AdminGuard>
+            }
+          />
+          <Route
+            path={`${BASE}/ip-whitelist`}
+            element={
+              <AdminGuard>
+                <AdminIpWhitelist />
               </AdminGuard>
             }
           />

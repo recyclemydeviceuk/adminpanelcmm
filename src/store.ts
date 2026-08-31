@@ -428,6 +428,9 @@ export function useAdminStore() {
           payload: log.payload,
           error: log.error,
           responseTime: log.responseTime || log.response_time,
+          partnerName: log.partnerName ?? log.partner_name ?? null,
+          // ?? not || — false is a meaningful value here and must survive.
+          ipWhitelisted: log.ipWhitelisted ?? log.ip_whitelisted ?? null,
         }));
         setApiLogs(mapped);
       }

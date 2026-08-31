@@ -12,6 +12,8 @@ export interface ApiLogEntry {
   payload: string;
   error?: string;
   responseTime: number;
+  partnerName?: string | null;
+  ipWhitelisted?: boolean | null;
 }
 
 export const apiGatewayApi = {

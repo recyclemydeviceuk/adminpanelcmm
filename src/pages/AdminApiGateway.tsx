@@ -182,7 +182,33 @@ export default function AdminApiGateway() {
                       {log.orderNumber && <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded">#{log.orderNumber}</span>}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500">
-                      <span>{log.sourceIp}</span>
+                      <span className="flex items-center gap-1.5">
+                        {log.sourceIp}
+                        {/* Explicit === true / === false: null means "unknown",
+                            which must not render as "not recognised". */}
+                        {log.ipWhitelisted === true && (
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 uppercase tracking-wide"
+                            title="Source IP matched an active whitelist entry"
+                          >
+                            Known
+                          </span>
+                        )}
+                        {log.ipWhitelisted === false && (
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 uppercase tracking-wide"
+                            title="Source IP is not in the whitelist. The request was still accepted — nothing is blocked."
+                          >
+                            Unlisted
+                          </span>
+                        )}
+                      </span>
+                      {log.partnerName && (
+                        <>
+                          <span>·</span>
+                          <span className="font-medium text-gray-600">{log.partnerName}</span>
+                        </>
+                      )}
                       <span>·</span>
                       <span>{log.responseTime}ms</span>
                       <span>·</span>

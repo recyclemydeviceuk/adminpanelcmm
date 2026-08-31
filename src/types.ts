@@ -214,6 +214,14 @@ export interface ApiRequestLog {
   payload: string;
   error?: string;
   responseTime: number;
+  /** Which partner this request was attributed to, if any. */
+  partnerName?: string | null;
+  /**
+   * Whether sourceIp matched an active whitelist entry when the request landed.
+   * null/undefined means UNKNOWN (row predates the field, or the lookup failed)
+   * — it does not mean "not whitelisted", and never means the request was blocked.
+   */
+  ipWhitelisted?: boolean | null;
 }
 
 // ─── Partner ─────────────────────────────────────────────────────────────────
